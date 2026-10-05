@@ -1,4 +1,4 @@
-name: Compilar APK
+name: Build Android APK
 
 on:
   push:
@@ -6,53 +6,65 @@ on:
     paths-ignore:
       - "**.md"
       - "arm-ia.zip"
+  pull_request:
+    branches: [main, master]
   workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    name: Build & Upload Artifact
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
-      - name: Baixar o código
+      - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      - name: Instalar Java 17
+      - name: Set up Java Development Kit (JDK 17)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Instalar SDK, NDK e CMake do Android
+      - name: Cache Android SDK Components
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.tool_cache }}/android-sdk
+            ~/.android/avd
+          key: ${{ runner.os }}-android-sdk-34-ndk-26.3.11579264
+
+      - name: Install Android SDK, NDK & CMake
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses > /dev/null || true
           "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" "ndk;26.3.11579264" "cmake;3.22.1"
 
-      - name: Instalar Gradle 8.9
+      - name: Setup Gradle Environment & Cache
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
-      - name: Compilar (debug)
-        run: gradle :app:assembleDebug --stacktrace
+      - name: Grant Execute Permission for Gradle Wrapper
+        run: chmod +x gradlew
 
-      - name: Renomear o APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk ArmIA-debug.apk
+      - name: Compile Debug APK
+        run: ./gradlew :app:assembleDebug --parallel --build-cache --stacktrace
 
-      - name: Guardar como artefato
+      - name: Prepare Artifact Binary
+        run: |
+          mkdir -p output/
+          cp app/build/outputs/apk/debug/app-debug.apk output/ArmIA-v${{ github.run_number }}-debug.apk
+
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ArmIA-debug
-          path: ArmIA-debug.apk
-
-      - name: Publicar na aba Releases (baixa direto no celular)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: Arm-IA build ${{ github.run_number }}
-          prerelease: true
-          files: ArmIA-debug.apk
+          name: ArmIA-v${{ github.run_number }}-debug
+          path: output/ArmIA-v${{ github.run_number }}-debug.apk
+          retention-days: 14
