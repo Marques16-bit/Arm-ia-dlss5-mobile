@@ -1,8 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Arm-IA</string>
-    <string name="channel_name">Serviço Arm-IA</string>
-    <string name="notif_title">Arm-IA ativo</string>
-    <string name="notif_text">Os filtros aparecem quando um jogo do seu perfil abrir.</string>
-    <string name="notif_stop">Parar</string>
+    <string name="app_description">Real-time AI visual enhancements &amp; frame optimization for mobile games.</string>
+
+    <string name="channel_service_name">Background Overlay Service</string>
+    <string name="channel_service_desc">Keeps Arm-IA active to detect games and render screen overlays.</string>
+    <string name="channel_alerts_name">Game Performance Alerts</string>
+    <string name="channel_alerts_desc">Notifications for thermal warnings and profile auto-switches.</string>
+
+    <string name="notif_title">Arm-IA Engine Active</string>
+    <string name="notif_text">Monitoring active games. Overlay will attach automatically.</string>
+
+    <string name="notif_stop">Stop</string>
+
+    <string name="dashboard_title">Dashboard</string>
+    <string name="service_status_title">Service Control</string>
+    <string name="service_status_active">Active &amp; Ready</string>
+    <string name="service_status_inactive">Disabled</string>
+
+    <string name="permission_overlay">Display over other apps</string>
+    <string name="permission_usage">Usage stats access</string>
+    <string name="permission_notifications">Post notifications</string>
+    <string name="permissions_required_hint">Grant overlay and usage permissions to enable real-time detection.</string>
+
+    <string name="section_my_games">Game Profiles</string>
+    <string name="empty_games_list">No games added yet. Search and add games below.</string>
+    <string name="section_add_game">Add Games</string>
+    <string name="search_apps_placeholder">Search installed apps…</string>
+    <string name="loading_apps">Scanning installed apps…</string>
+
+    <string name="action_start_service">Enable Engine</string>
+    <string name="action_stop_service">Disable Engine</string>
+    <string name="action_grant_permission">Grant</string>
+    <string name="action_add">Add</string>
+    <string name="action_remove_game">Remove Profile</string>
+
+    <string name="label_style">Visual Style</string>
+    <string name="label_intensity">Effect Intensity</string>
+    <string name="label_mode">Performance Mode</string>
+    <string name="tag_game">GAME</string>
+    <string name="capture_laboratory_hint">Requires overlay capture permissions inside the game lab.</string>
+
+    <string name="cd_app_icon">%1$s icon</string>
+    <string name="cd_toggle_profile">Toggle profile for %1$s</string>
+    <string name="cd_permission_status_granted">%1$s permission granted</string>
+    <string name="cd_permission_status_denied">%1$s permission required</string>
 </resources>
