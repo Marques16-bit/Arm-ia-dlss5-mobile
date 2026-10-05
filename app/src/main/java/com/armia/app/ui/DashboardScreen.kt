@@ -137,7 +137,7 @@ fun DashboardScreen(vm: DashboardViewModel, onRequestNotifications: () -> Unit) 
                             label = stringResource(R.string.permission_usage),
                             granted = permissions.usageAccess
                         ) {
-                            context.startActivity(Permissions.usageAccessSettingsIntent())
+                            context.startActivity(Permissions.usageAccessSettingsIntent(context))
                         }
 
                         PermissionRow(
@@ -434,3 +434,92 @@ private fun ProfileCard(
                         }
                     }
 
+                    if (profile.style.needsCapture) {
+                        Text(
+                            text = stringResource(R.string.capture_laboratory_hint),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+
+                    var intensity by remember(profile.intensity) { mutableStateOf(profile.intensity) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.label_intensity),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${(intensity * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Slider(
+                        value = intensity,
+                        onValueChange = { intensity = it },
+                        onValueChangeFinished = { onChange { it.copy(intensity = intensity) } }
+                    )
+
+                    Text(
+                        text = stringResource(R.string.label_mode),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PerformanceMode.values().forEach { mode ->
+                            FilterChip(
+                                selected = profile.mode == mode,
+                                onClick = { onChange { it.copy(mode = mode) } },
+                                label = { Text(mode.label) },
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            TextButton(
+                onClick = onRemove,
+                modifier = Modifier.align(Alignment.End),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(stringResource(R.string.action_remove_game))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppIcon(packageName: String, size: Dp = 40.dp) {
+    val context = LocalContext.current
+    val bitmap = remember(packageName) {
+        runCatching {
+            context.packageManager.getApplicationIcon(packageName).toBitmap(96, 96).asImageBitmap()
+        }.getOrNull()
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = null,
+            modifier = Modifier
+                .size(size)
+                .clip(RoundedCornerShape(12.dp))
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+    }
+}
