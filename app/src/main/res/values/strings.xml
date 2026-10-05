@@ -3,6 +3,7 @@
     <string name="app_name">Arm-IA</string>
     <string name="app_description">Real-time AI visual enhancements &amp; frame optimization for mobile games.</string>
 
+    <string name="channel_name">Background Overlay Service</string>
     <string name="channel_service_name">Background Overlay Service</string>
     <string name="channel_service_desc">Keeps Arm-IA active to detect games and render screen overlays.</string>
     <string name="channel_alerts_name">Game Performance Alerts</string>
@@ -10,7 +11,6 @@
 
     <string name="notif_title">Arm-IA Engine Active</string>
     <string name="notif_text">Monitoring active games. Overlay will attach automatically.</string>
-
     <string name="notif_stop">Stop</string>
 
     <string name="dashboard_title">Dashboard</string>
@@ -22,6 +22,8 @@
     <string name="permission_usage">Usage stats access</string>
     <string name="permission_notifications">Post notifications</string>
     <string name="permissions_required_hint">Grant overlay and usage permissions to enable real-time detection.</string>
+
+    <string name="service_active_hint">Active. Open a game from the list below and look for the overlay button.</string>
 
     <string name="section_my_games">Game Profiles</string>
     <string name="empty_games_list">No games added yet. Search and add games below.</string>
