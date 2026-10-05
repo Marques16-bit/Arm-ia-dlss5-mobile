@@ -1,0 +1,29 @@
+name: Descompactar projeto
+on:
+  push:
+    paths:
+      - "arm-ia.zip"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abrir o zip
+        run: |
+          test -f arm-ia.zip || { echo "arm-ia.zip não está na raiz do repositório"; exit 1; }
+          unzip -o arm-ia.zip -d .
+          rm arm-ia.zip
+
+      - name: Salvar no repositório
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Importa o projeto Arm-IA" || echo "Nada novo para salvar"
+          git push
