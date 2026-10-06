@@ -2,11 +2,15 @@ name: Descompactar projeto
 on:
   push:
     paths:
-      - "arm-ia.zip"
+      - "arm-ia*.zip"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: descompactar-projeto
+  cancel-in-progress: false
 
 jobs:
   unzip:
@@ -16,9 +20,17 @@ jobs:
 
       - name: Abrir o zip
         run: |
-          test -f arm-ia.zip || { echo "arm-ia.zip não está na raiz do repositório"; exit 1; }
-          unzip -o arm-ia.zip -d .
-          rm arm-ia.zip
+          shopt -s nullglob
+          zips=(arm-ia*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then
+            echo "Nenhum arm-ia*.zip na raiz: provavelmente já foi descompactado. Nada a fazer."
+            exit 0
+          fi
+          for z in "${zips[@]}"; do
+            echo "Abrindo $z"
+            unzip -o "$z" -d .
+            rm -- "$z"
+          done
 
       - name: Salvar no repositório
         run: |
