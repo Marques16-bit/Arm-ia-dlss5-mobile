@@ -41,6 +41,9 @@ public:
     void setSurface(ANativeWindow* window);
 
     void setStyle(Style style, float intensity, Quality quality);
+    // Troca os números de um estilo (vindos do pacote de efeitos). values = kTargetFieldCount
+    // floats, ou nullptr para voltar ao padrão de fábrica daquele estilo.
+    void setStyleTargets(int style, const float* values);
     void setTargetFps(int fps);
     // Valores de PowerManager.THERMAL_STATUS_* (0 = nenhum ... 6 = desligamento).
     void setThermalStatus(int status);
@@ -66,7 +69,8 @@ private:
         GLuint id = 0;
         GLint src = -1, texel = -1, res = -1, frame = -1, sharpen = -1, exposure = -1,
               contrast = -1, saturation = -1, vibrance = -1, temperature = -1, shadow = -1,
-              highlight = -1, grain = -1, vignette = -1, autoGain = -1;
+              highlight = -1, grain = -1, vignette = -1, autoGain = -1, clarity = -1,
+              bloom = -1, micro = -1;
     };
 
     void threadMain();
@@ -81,6 +85,7 @@ private:
     bool drawCapture(const GradeParams& g, uint32_t frame);
     void updateAutoGain(const gl::RenderTarget& src);
     int effectiveFps() const;  // chamar com mu_ travado
+    void rebuildParamsLocked();  // chamar com mu_ travado
 
     // ---- estado compartilhado (protegido por mu_) ----
     mutable std::mutex mu_;
@@ -98,6 +103,11 @@ private:
     uint64_t captureGen_ = 0;
     uint64_t captureAppliedGen_ = 0;
     EffectParams params_;
+    Style curStyle_ = Style::Off;
+    float curIntensity_ = 0.f;
+    Quality curQuality_ = Quality::Balanced;
+    StyleTarget override_[kStyleCount];
+    bool hasOverride_[kStyleCount] = {};
     bool paramsDirty_ = true;
     bool forceRedraw_ = false;
     bool animated_ = false;

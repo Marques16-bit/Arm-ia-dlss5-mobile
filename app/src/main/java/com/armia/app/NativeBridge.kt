@@ -16,6 +16,7 @@ object NativeBridge {
     external fun nativeDestroy(handle: Long)
     external fun nativeSetSurface(handle: Long, surface: Surface?)
     external fun nativeSetStyle(handle: Long, style: Int, intensity: Float, quality: Int)
+    external fun nativeSetStyleTargets(handle: Long, style: Int, values: FloatArray?)
     external fun nativeSetTargetFps(handle: Long, fps: Int)
     external fun nativeSetThermalStatus(handle: Long, status: Int)
     external fun nativeSetCaptureSource(handle: Long, surfaceTexture: SurfaceTexture?, width: Int, height: Int)
@@ -38,6 +39,12 @@ class NativeEngine {
     @Synchronized
     fun setStyle(styleId: Int, intensity: Float, qualityId: Int) {
         if (handle != 0L) NativeBridge.nativeSetStyle(handle, styleId, intensity, qualityId)
+    }
+
+    /** Números do estilo vindos do pacote de efeitos (24 valores; NaN mantém o padrão). null = padrão. */
+    @Synchronized
+    fun setStyleTargets(styleId: Int, values: FloatArray?) {
+        if (handle != 0L) NativeBridge.nativeSetStyleTargets(handle, styleId, values)
     }
 
     @Synchronized

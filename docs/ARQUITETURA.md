@@ -100,3 +100,28 @@ ou ligar o Laboratório junto com a Sobreposição (o app já desliga a Sobrepos
 2. Testar o Laboratório na prévia, depois em tela cheia com "Compartilhar um app".
 3. Medir FPS do jogo com e sem Arm-IA.
 4. Decidir entre Shizuku (matriz de cor) ou root (gancho EGL) para filtros de cor sem custo.
+
+## 7. "DLSS 5 de verdade" no celular: por que não dá
+
+- O DLSS 5 é um modelo de renderização neural da NVIDIA que recebe **a cor e os vetores de movimento de cada
+  quadro direto do motor do jogo** e reconstrói luz e materiais (pele, cabelo, tecido). Ele é distribuído só
+  dentro de jogos/drivers para PC e foi pensado para os Tensor Cores das placas RTX 50.
+- Não existe um "arquivo do DLSS 5" que rode em Android/ARM/Mali. Qualquer arquivo com esse nome é binário de
+  Windows (x64) ou outra coisa. Além disso, redistribuir os binários da NVIDIA viola a licença deles.
+- O Arm-IA vê só a imagem final (sem vetores de movimento nem profundidade). Por isso a abordagem é **imitar o
+  visual** com shaders: contraste local (clarity), brilho suave (bloom), sombras de contato (microShadow),
+  nitidez adaptativa, cor e auto-exposição. Está no estilo `DLSS5_LOOK`.
+
+## 8. Pacote de efeitos (`pack.json`)
+
+Formato (`"format": 1`): `styles.<ESTILO>.overlay` e `styles.<ESTILO>.grade`, com os números de cada efeito
+(intensidade 100%). O app lê **só** o `pack.json` (nada é extraído), limita o tamanho (zip até 20 MB, json até
+256 KB) e força cada número para uma faixa segura. A ordem dos 24 campos é a mesma em
+`PackManager.kt` e `presets.cpp::applyOverrides`. Próximo passo possível: LUT de cor (3D) dentro do pacote.
+
+## 9. Estabilidade ("sem glitches")
+
+- Shader final novo falhou ao compilar na GPU? O motor usa automaticamente o shader reserva (`kFragFinalSafe`).
+- Todo número do pacote é limitado a uma faixa; NaN/infinito são ignorados.
+- Auto-exposição suavizada e com ganho limitado (0,8 a 1,25), para a imagem não "pulsar".
+- Calor alto reduz o ritmo e para a animação do grão.

@@ -40,6 +40,18 @@ JNIEXPORT void JNICALL Java_com_armia_app_NativeBridge_nativeSetStyle(JNIEnv*, j
     engine(handle)->setStyle(static_cast<Style>(style), intensity, static_cast<Quality>(quality));
 }
 
+JNIEXPORT void JNICALL Java_com_armia_app_NativeBridge_nativeSetStyleTargets(
+    JNIEnv* env, jobject, jlong handle, jint style, jfloatArray values) {
+    if (!values) {
+        engine(handle)->setStyleTargets(style, nullptr);
+        return;
+    }
+    if (env->GetArrayLength(values) < armia::kTargetFieldCount) return;
+    float buf[armia::kTargetFieldCount];
+    env->GetFloatArrayRegion(values, 0, armia::kTargetFieldCount, buf);
+    engine(handle)->setStyleTargets(style, buf);
+}
+
 JNIEXPORT void JNICALL Java_com_armia_app_NativeBridge_nativeSetTargetFps(JNIEnv*, jobject,
                                                                           jlong handle,
                                                                           jint fps) {

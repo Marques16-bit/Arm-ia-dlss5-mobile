@@ -2,7 +2,7 @@
 
 Filtros visuais em tempo real para jogos no Android (ARM64), feitos por cima do jogo, **sem root**.
 
-**Estado atual (v0.1):** a base funciona de ponta a ponta (perfis de jogos, detecção do jogo aberto,
+**Estado atual (v0.2):** a base funciona de ponta a ponta (perfis de jogos, detecção do jogo aberto,
 bolinha flutuante, painel de ajustes, motor OpenGL ES em C++). O que roda de verdade hoje:
 
 | Modo | O que faz | Observação |
@@ -10,7 +10,17 @@ bolinha flutuante, painel de ajustes, motor OpenGL ES em C++). O que roda de ver
 | **Sobreposição** (padrão) | Grão de filme, vinheta, cor (tint) e barras de cinema | Leve, estável, funciona em qualquer jogo |
 | **Laboratório de captura** (experimental) | Denoise, nitidez, cor, iluminação, auto-exposição | Precisa de captura de tela; latência de 1 a 3 quadros |
 
-Não existe rede neural treinada nesta versão. Veja `docs/ARQUITETURA.md` para os limites reais.
+Não existe rede neural treinada nesta versão, e **não é o DLSS 5 da NVIDIA** (veja a seção abaixo).
+O estilo **"Estilo DLSS 5"** imita o *visual* (contraste local, brilho suave, sombras de contato, cor)
+com shaders. Veja `docs/ARQUITETURA.md` para os limites reais.
+
+## Pacote de efeitos (obrigatório)
+
+Ao abrir o app, a primeira tela pede o **pacote de efeitos** (`.zip` com um `pack.json`).
+Sem ele o serviço não liga. O pacote padrão é o `Arm-IA-pacote-padrao.zip` (também na pasta `pacote/`).
+Para mudar o visual **sem recompilar**: edite os números do `pack.json` num editor de texto, refaça o zip e use
+**Trocar** na faixa do topo do app. O `LEIA-ME.txt` dentro do zip explica cada campo e a faixa permitida.
+Valores fora da faixa são corrigidos sozinhos; um pacote ruim não estraga a imagem.
 
 ## Estrutura
 
@@ -51,21 +61,23 @@ ArmIA/
 4. **Compile.** Abra **Actions → Compilar APK → Run workflow**. A primeira vez leva uns 8 a 15 minutos.
    (Se o commit do passo 3 não disparou a compilação sozinho, é normal: use "Run workflow".)
 
-5. **Baixe o APK.** Na página principal do repositório, entre em **Releases**, abra o build mais novo
-   e toque em `ArmIA-debug.apk`. Instale (o Android pede para permitir instalar de fontes desconhecidas).
+5. **Baixe o APK.** Abra a execução que terminou com ✅ em **Actions**, role até **Artifacts** e baixe
+   `ArmIA-v…-debug` (vem dentro de um zip; abra e instale o `.apk`). O Android pede para permitir instalar
+   de fontes desconhecidas.
 
 6. **Se a compilação falhar:** abra a execução com ❌, toque no passo vermelho e copie as últimas
    linhas do erro. Com elas dá para corrigir o ponto exato.
 
 ## Como usar o app
 
-1. Abra o Arm-IA e libere **Sobrepor a outros apps**, **Acesso ao uso** e **Notificações**.
+1. Abra o Arm-IA, escolha o **pacote de efeitos** e libere **Sobrepor a outros apps**, **Acesso ao uso** e **Notificações**.
 2. Em **Adicionar jogo**, toque no jogo. Escolha estilo, intensidade e modo.
 3. Toque em **Ativar serviço**.
 4. Abra o jogo. A bolinha aparece; toque nela para abrir o painel.
 
 ### Laboratório de captura
 
+O estilo **Estilo DLSS 5** e o **Vibrante/HDR** só aparecem de verdade aqui.
 Pela bolinha: **Laboratório: prévia** (janela pequena) ou **tela cheia**. O Android pede permissão de
 captura. No Android 14 ou mais novo, escolha **Compartilhar um app** e selecione o jogo: assim a captura
 não inclui o filtro e não há efeito espelho. Se o seu aparelho só oferecer "tela inteira", use a prévia

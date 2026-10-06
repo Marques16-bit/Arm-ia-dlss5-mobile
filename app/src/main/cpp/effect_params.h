@@ -5,7 +5,11 @@
 namespace armia {
 
 // Os valores precisam bater com FilterStyle / PerformanceMode no Kotlin (data/Models.kt).
-enum class Style : int { Off = 0, Photoreal = 1, Cinema = 2, RealLife = 3, VibrantHdr = 4, Film = 5 };
+enum class Style : int { Off = 0, Photoreal = 1, Cinema = 2, RealLife = 3, VibrantHdr = 4, Film = 5, Dlss5Look = 6 };
+constexpr int kStyleCount = 7;
+
+// Quantos números o pacote de efeitos pode trocar por estilo (ordem em presets.cpp::applyOverrides).
+constexpr int kTargetFieldCount = 24;
 enum class Quality : int { Performance = 0, Balanced = 1, Quality = 2 };
 
 // Modo SOBREPOSIÇÃO: uma camada translúcida desenhada por cima do jogo.
@@ -33,6 +37,9 @@ struct GradeParams {
     float grain = 0.f;          // 0..1
     float vignette = 0.f;       // 0..1
     float autoExposure = 0.f;   // 0..1  quanto confiar na medição de brilho (NEON)
+    float clarity = 0.f;        // 0..1.5 contraste local (realça textura sem mexer no tom geral)
+    float bloom = 0.f;          // 0..1  brilho suave em volta das áreas claras
+    float microShadow = 0.f;    // 0..1  escurece frestas/cantos (sensação de sombra de contato)
 };
 
 struct EffectParams {
@@ -40,7 +47,19 @@ struct EffectParams {
     GradeParams grade;
 };
 
-// Converte (estilo, intensidade 0..1, qualidade) nos parâmetros finais.
+// Valores de um estilo com intensidade = 1 (o "alvo" para onde a intensidade interpola).
+struct StyleTarget {
+    OverlayParams overlay;
+    GradeParams grade;
+};
+
+StyleTarget defaultTarget(Style style);
+
+// Troca os campos de `t` pelos de `values` (kTargetFieldCount floats). NaN/inf = mantém o padrão.
+void applyOverrides(StyleTarget& t, const float* values);
+
+// Converte (alvo, intensidade 0..1, qualidade) nos parâmetros finais.
+EffectParams makePreset(const StyleTarget& target, float intensity, Quality quality);
 EffectParams makePreset(Style style, float intensity, Quality quality);
 
 }  // namespace armia

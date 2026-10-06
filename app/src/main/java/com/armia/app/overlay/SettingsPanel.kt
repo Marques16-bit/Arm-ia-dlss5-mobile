@@ -82,7 +82,7 @@ class SettingsPanel(
         content.addView(sectionLabel("Estilo"))
         val styles = listOf(
             FilterStyle.PHOTOREAL, FilterStyle.CINEMA, FilterStyle.REAL_LIFE,
-            FilterStyle.VIBRANT_HDR, FilterStyle.FILM
+            FilterStyle.VIBRANT_HDR, FilterStyle.FILM, FilterStyle.DLSS5_LOOK
         )
         styles.chunked(3).forEach { rowStyles ->
             content.addView(chipRow().also { row ->

@@ -29,6 +29,7 @@ import com.armia.app.NativeEngine
 import com.armia.app.R
 import com.armia.app.data.FilterStyle
 import com.armia.app.data.GameProfile
+import com.armia.app.data.PackManager
 import com.armia.app.data.PerformanceMode
 import com.armia.app.data.ProfileRepository
 import com.armia.app.overlay.FilterSurfaceView
@@ -187,6 +188,8 @@ class CaptureLabService : Service() {
 
         val e = NativeEngine()
         engine = e
+        PackManager.load(applicationContext)
+        PackManager.applyTo(e)
         thermal = ThermalMonitor(this) { status -> engine?.setThermalStatus(status) }.also { it.start() }
 
         val thread = HandlerThread("armia-frames").also { it.start() }

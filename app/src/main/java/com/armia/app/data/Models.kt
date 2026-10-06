@@ -7,7 +7,8 @@ enum class FilterStyle(val id: Int, val label: String, val needsCapture: Boolean
     CINEMA(2, "Cinema", false),
     REAL_LIFE(3, "Vida Real", false),
     VIBRANT_HDR(4, "Vibrante/HDR", true),
-    FILM(5, "Filme/Grain", false);
+    FILM(5, "Filme/Grain", false),
+    DLSS5_LOOK(6, "Estilo DLSS 5", true);
 
     companion object {
         fun fromId(id: Int): FilterStyle = values().firstOrNull { it.id == id } ?: CINEMA

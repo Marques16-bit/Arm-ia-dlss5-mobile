@@ -49,11 +49,37 @@ void RenderEngine::setSurface(ANativeWindow* window) {
     ackCv_.wait(lk, [&] { return windowAppliedGen_ >= gen || quit_ || initFailed_; });
 }
 
-void RenderEngine::setStyle(Style style, float intensity, Quality quality) {
-    std::lock_guard<std::mutex> lk(mu_);
-    params_ = makePreset(style, intensity, quality);
+void RenderEngine::rebuildParamsLocked() {
+    const int idx = static_cast<int>(curStyle_);
+    const StyleTarget target = (idx >= 0 && idx < kStyleCount && hasOverride_[idx])
+                                   ? override_[idx]
+                                   : defaultTarget(curStyle_);
+    params_ = makePreset(target, curIntensity_, curQuality_);
     paramsDirty_ = true;
     animated_ = params_.overlay.grain > 0.001f && thermal_ < kThermalSevere;
+}
+
+void RenderEngine::setStyle(Style style, float intensity, Quality quality) {
+    std::lock_guard<std::mutex> lk(mu_);
+    curStyle_ = style;
+    curIntensity_ = intensity;
+    curQuality_ = quality;
+    rebuildParamsLocked();
+    cv_.notify_all();
+}
+
+void RenderEngine::setStyleTargets(int style, const float* values) {
+    if (style < 0 || style >= kStyleCount) return;
+    std::lock_guard<std::mutex> lk(mu_);
+    if (values) {
+        StyleTarget t = defaultTarget(static_cast<Style>(style));
+        applyOverrides(t, values);
+        override_[style] = t;
+        hasOverride_[style] = true;
+    } else {
+        hasOverride_[style] = false;
+    }
+    rebuildParamsLocked();
     cv_.notify_all();
 }
 
@@ -270,6 +296,11 @@ bool RenderEngine::initGlResources() {
     denoise_.id = gl::buildProgram(kVertFullscreen, kFragDenoise, "denoise");
     statsProg_.id = gl::buildProgram(kVertFullscreen, kFragStats, "stats");
     final_.id = gl::buildProgram(kVertFullscreen, kFragFinal, "final");
+    if (!final_.id) {
+        // GPU que não aceitou o shader novo: usa a versão simples em vez de mostrar lixo na tela.
+        LOGW("Shader final novo falhou; usando a versão reserva");
+        final_.id = gl::buildProgram(kVertFullscreen, kFragFinalSafe, "finalSafe");
+    }
 
     // O modo sobreposição é o essencial. Se só os shaders de captura falharem (ex.: GPU sem
     // suporte a textura externa em ES3) o app continua funcionando sem o modo captura.
@@ -314,6 +345,9 @@ bool RenderEngine::initGlResources() {
         final_.grain = U(p, "uGrain");
         final_.vignette = U(p, "uVignette");
         final_.autoGain = U(p, "uAutoGain");
+        final_.clarity = U(p, "uClarity");   // -1 na versão reserva (glUniform ignora -1)
+        final_.bloom = U(p, "uBloom");
+        final_.micro = U(p, "uMicro");
     }
 
     glGenVertexArrays(1, &vao_);
@@ -424,10 +458,8 @@ bool RenderEngine::drawOverlay(const OverlayParams& o, uint32_t frame) {
 }
 
 void RenderEngine::updateAutoGain(const gl::RenderTarget& src) {
-    // 1) mipmaps da imagem atual  2) lê um nível pequeno para 32x18  3) NEON calcula a média
-    glBindTexture(GL_TEXTURE_2D, src.tex);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
+    // Os mipmaps de `src` já foram gerados em drawCapture.
+    // 1) lê um nível pequeno para 32x18  2) NEON calcula a média
     glBindFramebuffer(GL_FRAMEBUFFER, statsRt_.fbo);
     glViewport(0, 0, kStatsW, kStatsH);
     glUseProgram(statsProg_.id);
@@ -485,8 +517,17 @@ bool RenderEngine::drawCapture(const GradeParams& g, uint32_t frame) {
         if (neural_->process(src->tex, dst->fbo, dst->width, dst->height)) src = dst;
     }
 
+    // Mipmaps da imagem: servem de "desfoque barato" (clarity, bloom, sombras) e de medição.
+    const bool wantStats = g.autoExposure > 0.01f && (captureFrames_ % kStatsEvery) == 0;
+    const bool wantMips = wantStats || g.clarity > 0.01f || g.bloom > 0.01f || g.microShadow > 0.01f;
+    if (wantMips) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);   // a textura não pode estar ligada ao FBO atual
+        glBindTexture(GL_TEXTURE_2D, src->tex);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
     // Passo 3: medição de brilho (a cada N quadros)
-    if (g.autoExposure > 0.01f && (captureFrames_ % kStatsEvery) == 0) updateAutoGain(*src);
+    if (wantStats) updateAutoGain(*src);
     ++captureFrames_;
     autoGain_ += (autoGainTarget_ - autoGain_) * 0.08f;  // suaviza para não "pulsar"
     const float gain = 1.f + (autoGain_ - 1.f) * g.autoExposure;
@@ -513,6 +554,9 @@ bool RenderEngine::drawCapture(const GradeParams& g, uint32_t frame) {
     glUniform1f(final_.grain, g.grain);
     glUniform1f(final_.vignette, g.vignette);
     glUniform1f(final_.autoGain, gain);
+    glUniform1f(final_.clarity, g.clarity);
+    glUniform1f(final_.bloom, g.bloom);
+    glUniform1f(final_.micro, g.microShadow);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     return true;
 }

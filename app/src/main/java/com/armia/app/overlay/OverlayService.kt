@@ -24,6 +24,7 @@ import com.armia.app.capture.CaptureConsentActivity
 import com.armia.app.capture.CaptureLabService
 import com.armia.app.data.FilterStyle
 import com.armia.app.data.GameProfile
+import com.armia.app.data.PackManager
 import com.armia.app.data.ProfileRepository
 import com.armia.app.system.ForegroundAppWatcher
 import com.armia.app.system.Permissions
@@ -83,6 +84,14 @@ class OverlayService : Service() {
         }
         startAsForeground()
 
+        // Sem o pacote de efeitos o serviço não liga (o visual vem dele).
+        PackManager.load(applicationContext)
+        if (!PackManager.isReady()) {
+            Toast.makeText(this, "Escolha o pacote de efeitos no Arm-IA antes de ativar.", Toast.LENGTH_LONG).show()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         if (!Permissions.canDrawOverlays(this) || !Permissions.hasUsageAccess(this)) {
             Toast.makeText(this, "Faltam permissões. Abra o Arm-IA e libere as duas.", Toast.LENGTH_LONG).show()
             stopSelf()
@@ -131,6 +140,7 @@ class OverlayService : Service() {
     private fun startWatching() {
         val e = NativeEngine()
         engine = e
+        PackManager.applyTo(e)
         thermal = ThermalMonitor(this) { status -> engine?.setThermalStatus(status) }.also { it.start() }
 
         watcher = ForegroundAppWatcher(this, scope) { pkg ->
@@ -140,6 +150,13 @@ class OverlayService : Service() {
 
         // Mudanças de perfil (feitas no app ou no painel) e do laboratório reavaliam tudo.
         scope.launch { repo.profiles.collect { refresh() } }
+        // Trocou o pacote de efeitos com o serviço ligado: aplica os números novos.
+        scope.launch {
+            PackManager.state.collect {
+                engine?.let { en -> PackManager.applyTo(en) }
+                refresh()
+            }
+        }
         scope.launch {
             var last = CaptureLabService.running.value
             CaptureLabService.running.collect { running ->
